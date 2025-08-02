@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Family Investment Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
+    h1, h2 { color: #333; }
+    .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .card, .chart-container, .add-form, .market {
+      background: white; border-radius: 8px; padding: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+    .gain { color: green; font-weight: bold; }
+    .loss { color: red; font-weight: bold; }
+    input, select, button { padding: 8px; margin: 5px 0; width: 100%; }
+    a { color: #0078d4; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <h1>🏡 Family Investment Dashboard</h1>
+
+  <!-- Market Snapshot -->
+  <div class="market">
+    <h2>📈 Real-Time Market Snapshot</h2>
+    <ul>
+      <li><a href="https://www.nseindia.com/market-data/index-performances" target="_blank">NSE India – Index Performances</a></li>
+      <li><a href="https://ticker.finology.in/market" target="_blank">Finology Ticker – Market Dashboard</a></li>
+      <li><a href="https://www.moneycontrol.com/markets/indian-indices/live-markets" target="_blank">Moneycontrol – Live Indices</a></li>
+    </ul>
+  </div>
+
+  <!-- Add New Asset -->
+  <div class="add-form">
+    <h2>➕ Add New Investment</h2>
+    <form id="assetForm">
+      <input type="text" id="owner" placeholder="Owner (You or Spouse)" required />
+      <select id="type">
+        <option value="Mutual Fund">Mutual Fund</option>
+        <option value="Stock">Stock</option>
+        <option value="Real Estate">Real Estate</option>
+        <option value="Other">Other</option>
+      </select>
+      <input type="text" id="asset" placeholder="Asset Name" required />
+      <input type="number" id="amount" placeholder="Amount (₹)" required />
+      <input type="text" id="return" placeholder="Return (%)" />
+      <button type="submit">Add Asset</button>
+    </form>
+    <p id="addStatus"></p>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard" id="portfolioCards"></div>
+
+  <!-- Chart -->
+  <div class="chart-container">
+    <h2>📊 Investment Allocation</h2>
+    <canvas id="allocationChart"></canvas>
+  </div>
+
+  <script>
+    const assets = [
+      { owner: 'You', type: 'Mutual Fund', asset: 'Axis Liquid Fund', amount: 1026, return: '+1.35%' },
+      { owner: 'You', type: 'Mutual Fund', asset: 'Nippon Silver ETF FoF', amount: 3786, return: '-3.79%' },
+      { owner: 'You', type: 'Mutual Fund', asset: 'Nippon Large Cap', amount: 2914, return: '-1.85%' },
+      { owner: 'You', type: 'Mutual Fund', asset: 'Invesco PSU ETF', amount: 2500, return: '—' },
+      { owner: 'You', type: 'Mutual Fund', asset: 'Parag Parikh Flexi Cap', amount: 2500, return: '—' },
+      { owner: 'Spouse', type: 'Mutual Fund', asset: 'SBI Contra Regular', amount: 16247, return: '+1.55%' },
+      { owner: 'Spouse', type: 'Mutual Fund', asset: 'SBI Large & Mid Regular', amount: 8371.95, return: '+4.65%' },
+      { owner: 'Spouse', type: 'Mutual Fund', asset: 'SBI Small Cap Regular', amount: 16428, return: '+2.68%' }
+    ];
+
+    function renderCards() {
+      const container = document.getElementById('portfolioCards');
+      container.innerHTML = '';
+      const grouped = {};
+      assets.forEach(a => {
+        if (!grouped[a.owner]) grouped[a.owner] = [];
+        grouped[a.owner].push(a);
+      });
+      for (const owner in grouped) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<h2>${owner}'s Portfolio</h2><table><tr><th>Type</th><th>Asset</th><th>Amount</th><th>Return</th></tr>${
+          grouped[owner].map(a => `<tr><td>${a.type}</td><td>${a.asset}</td><td>${a.amount}</td><td>${a.return}</td></tr>`).join('')
+        }</table>`;
+        container.appendChild(card);
+      }
+    }
+
+    function updateChart() {
+      const ctx = document.getElementById('allocationChart').getContext('2d');
+      const owners = [...new Set(assets.map(a => a.owner))];
+      const totals = owners.map(o => assets.filter(a => a.owner === o).reduce((sum, a) => sum + a.amount, 0));
+      new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: owners,
+          datasets: [{ data: totals, backgroundColor: ['#0078d4', '#00b294'] }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' },
+            title: { display: true, text: 'Portfolio Split' }
+          }
+        }
+      });
+    }
+
+    document.getElementById('assetForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const newAsset = {
+        owner: document.getElementById('owner').value,
+        type: document.getElementById('type').value,
+        asset: document.getElementById('asset').value,
+        amount: parseFloat(document.getElementById('amount').value),
+        return: document.getElementById('return').value || '—'
+      };
+      assets.push(newAsset);
+      document.getElementById('addStatus').textContent = '✅ Asset added!';
+      renderCards();
+      updateChart();
+      e.target.reset();
+    });
+
+    renderCards();
+    updateChart();
+  </script>
+
+</body>
+</html>
